@@ -43,3 +43,11 @@ Possibly solved by doing an OSS build, which doesn't include CCL pacakges, one o
 ### The hash of the ```deps``` derivation keeps chaging
 
 There is probably some file that contains a timestamp included in it.
+
+### ```lifecycle-hooks``` error
+```console
+/build/source/pkg/ui/BUILD.bazel:5:22: Running lifecycle hooks on npm package shebang-regex@1.0.0 [for tool] failed: (Exit 1): lifecycle-hooks.sh failed: error executing command (from target //pkg/ui:.aspect_rules_js/node_modules/shebang-regex@1.0.0/lc) bazel-out/k8-opt-exec-2B5CBBC6/bin/external/aspect_rules_js/npm/private/lifecycle/lifecycle-hooks.sh shebang-regex ../../../external/npm__shebang-regex__1.0.0/package ... (remaining 1 argument skipped)
+src/main/tools/process-wrapper-legacy.cc:80: "execvp(bazel-out/k8-opt-exec-2B5CBBC6/bin/external/aspect_rules_js/npm/private/lifecycle/lifecycle-hooks.sh, ...)": No such file or directory
+Target //pkg/cmd/cockroach-oss:cockroach-oss failed to build
+```
+
