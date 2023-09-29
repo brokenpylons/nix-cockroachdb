@@ -17,6 +17,7 @@ buildBazelPackage {
   };
 
   patches = [
+    ./remove_libedit.patch
     ./add_remove_exists.patch
     ./use_local_go.patch
     ./patch_tool.patch
@@ -39,7 +40,7 @@ buildBazelPackage {
   bazelTargets = [ "//pkg/cmd/cockroach-short:cockroach-short" ];
 
   fetchAttrs = {
-    sha256 = "sha256-UeudshIRe0resfFID297staCOwSQdzgm/sMSxd/5Av8="; #lib.fakeHash;
+    sha256 = "sha256-zlJ7/1/qV3IVsiQkuD2+vvdI9Y9zyJ5ighGnFLoSQqo="; #lib.fakeHash;
 
     preBuild = ''
       export USER=nixbld
