@@ -15,6 +15,7 @@ The [cockroach-libedit](https://github.com/cockroachdb/libedit) files which are 
 com_github_cockroachdb_cockroach/external/com_github_knz_go_libedit/unix/editline_unix.go:40:11: fatal error: histedit.h: No such file or directory
 ```
 This is not worth solving, since ```libedit``` is going to be removed in the next version.
+
 By some miracle libedit can be removed cleanly by cherry picking [commit](https://github.com/cockroachdb/cockroach/pull/105282/commits/1d39c48e32bb5847fcca363b8518b6db87485bf7).
 
 ## Hacks
