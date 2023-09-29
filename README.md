@@ -2,7 +2,8 @@
 
 An attempt to build CockroachDB using ```bazel```.
 The derivation is based on ```buildBazelPackage```. 
-Currently the ```//pkg/cmd/cockroach-short:cockroach-short``` target is used, which is not the full build, however I can't even get that to work.
+Currently the ```//pkg/cmd/cockroach-oss``` target is used.
+The ```//pkg/cmd/cockroach-short``` target fails with the ```opentelemetry``` linking error.
 
 The build instructions are [here](https://cockroachlabs.atlassian.net/wiki/spaces/CRDB/pages/2221703221/Developing+with+Bazel).
 
