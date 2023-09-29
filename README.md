@@ -40,6 +40,6 @@ error: builder for '/nix/store/9wnyqx3amb14ybh3d9grrcn6w95dy3yg-cockroachdb-23.1
 ```
 No idea how to fix.
 
-### The hash of the dependencies derivation keeps chaging
+### The hash of the ```deps``` derivation keeps chaging
 
-There is probably some file that includes a timestamp included in the pacakge.
+There is probably some file that includes a timestamp included in it.
