@@ -42,4 +42,4 @@ No idea how to fix.
 
 ### The hash of the ```deps``` derivation keeps chaging
 
-There is probably some file that includes a timestamp included in it.
+There is probably some file that contains a timestamp included in it.
