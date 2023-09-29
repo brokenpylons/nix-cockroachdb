@@ -38,7 +38,7 @@ error: builder for '/nix/store/9wnyqx3amb14ybh3d9grrcn6w95dy3yg-cockroachdb-23.1
        > See https://github.com/bazelbuild/rules_go/issues/1877.
        > Target //pkg/cmd/cockroach-short:cockroach-short failed to build
 ```
-No idea how to fix.
+Possibly solved by doing an OSS build, which doesn't include CCL pacakges, one of which is ```opentelemetry```.
 
 ### The hash of the ```deps``` derivation keeps chaging
 
