@@ -39,3 +39,7 @@ error: builder for '/nix/store/9wnyqx3amb14ybh3d9grrcn6w95dy3yg-cockroachdb-23.1
        > Target //pkg/cmd/cockroach-short:cockroach-short failed to build
 ```
 No idea how to fix.
+
+### The hash of the dependencies derivation keeps chaging
+
+There is probably some file that includes a timestamp included in the pacakge.
