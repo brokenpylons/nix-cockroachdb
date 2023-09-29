@@ -1,4 +1,4 @@
-# Nix derivation for Cockroachdb
+# Nix derivation for CockroachDB
 
 An attempt to build CockroachDB using bazel.
 The derivation is based on ```buildBazelPackage```. 
