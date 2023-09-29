@@ -16,7 +16,7 @@ Obviously, this is not an ideal solution, there should be a way to apply the pat
 
 ### ```libedit``` files not picked up
 
-The [cockroach-libedit](https://github.com/cockroachdb/libedit) files with are included as a submodule are not picked up by bazel.
+The [cockroach-libedit](https://github.com/cockroachdb/libedit) files which are included as a submodule are not picked up by bazel.
 ```console
 com_github_cockroachdb_cockroach/external/com_github_knz_go_libedit/unix/editline_unix.go:40:11: fatal error: histedit.h: No such file or directory
 ```
