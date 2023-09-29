@@ -39,7 +39,7 @@ buildBazelPackage {
   bazelTargets = [ "//pkg/cmd/cockroach-short:cockroach-short" ];
 
   fetchAttrs = {
-    sha256 = "sha256-6HVp4t3inN0LND2Jjg9VyyESmQdK/xcDeDD+xWjA97w="; #lib.fakeHash; #"sha256-85Oly0b0VkXBy5NxViCFfBUezO4mf9uPtQG8SFEXoLg=";  lib.fakeHash;# "sha256-n0h9vAkq9lUh7tNrzvm9JfigzibEGhAnNLm4lvvlsAs=";
+    sha256 = "sha256-6HVp4t3inN0LND2Jjg9VyyESmQdK/xcDeDD+xWjA97w="; #lib.fakeHash;
 
     preBuild = ''
       export USER=nixbld
