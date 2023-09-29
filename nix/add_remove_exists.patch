@@ -1,0 +1,13 @@
+diff --git a/WORKSPACE b/WORKSPACE
+index 1a9f94bd..abcc93f4 100644
+--- a/WORKSPACE
++++ b/WORKSPACE
+@@ -20,6 +20,8 @@ http_archive(
+ # Like the above, but for JS.
+ http_archive(
+     name = "aspect_rules_js",
++    patch_args = ["-p1"],
++    patches = ["//:remove_exists.patch"],
+     sha256 = "08061ba5e5e7f4b1074538323576dac819f9337a0c7d75aee43afc8ae7cb6e18",
+     strip_prefix = "rules_js-1.26.1",
+     url = "https://storage.googleapis.com/public-bazel-artifacts/js/rules_js-v1.26.1.tar.gz",

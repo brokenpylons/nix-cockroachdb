@@ -1,0 +1,23 @@
+diff --git a/DEPS.bzl b/DEPS.bzl
+index 468292bc..f5b47855 100644
+--- a/DEPS.bzl
++++ b/DEPS.bzl
+@@ -4135,15 +4135,9 @@ def go_deps():
+         build_file_proto_mode = "disable_global",
+         build_naming_convention = "go_default_library",
+         importpath = "github.com/grpc-ecosystem/grpc-gateway",
+-        patch_args = ["-p1"],
+-        patches = [
+-            "@com_github_cockroachdb_cockroach//build/patches:com_github_grpc_ecosystem_grpc_gateway.patch",
+-        ],
+-        sha256 = "377b03aef288b34ed894449d3ddba40d525dd7fb55de6e79045cdf499e7fe565",
+-        strip_prefix = "github.com/grpc-ecosystem/grpc-gateway@v1.16.0",
+-        urls = [
+-            "https://storage.googleapis.com/cockroach-godeps/gomod/github.com/grpc-ecosystem/grpc-gateway/com_github_grpc_ecosystem_grpc_gateway-v1.16.0.zip",
+-        ],
++        vcs = "git",
++        remote = "https://github.com/brokenpylons/grpc-gateway",
++        commit = "17d38184ffec52c75fcc15c93db3b34a6a2cf8db",
+     )
+     go_repository(
+         name = "com_github_guptarohit_asciigraph",

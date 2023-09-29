@@ -1,0 +1,23 @@
+diff --git a/npm/private/utils.bzl b/npm/private/utils.bzl
+index fa23747..1fc2924 100644
+--- a/npm/private/utils.bzl
++++ b/npm/private/utils.bzl
+@@ -355,17 +355,7 @@ def _exists(rctx, p):
+         #         result = rctx.execute(["cmd.exe", "/C", "_exists.bat", str(p).replace("/", "\\")])
+ 
+     else:
+-        rctx.file("_exists.sh", content = """#!/usr/bin/env bash
+-set -o errexit -o nounset -o pipefail
+-if [ ! -f $1 ]; then exit 42; fi
+-""", executable = True)
+-        result = rctx.execute(["./_exists.sh", str(p)])
+-    if result.return_code == 0:  # file exists
+-        return True
+-    elif result.return_code == 42:  # file does not exist
+-        return False
+-    else:
+-        fail(INTERNAL_ERROR_MSG)
++      return True
+ 
+ # TODO: move this to aspect_bazel_lib
+ def _home_directory(rctx):
