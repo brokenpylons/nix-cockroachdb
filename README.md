@@ -12,7 +12,7 @@ The build instructions are [here](https://cockroachlabs.atlassian.net/wiki/space
 
 This [patch](https://github.com/cockroachdb/cockroach/blob/v23.1.10/build/patches/com_github_grpc_ecosystem_grpc_gateway.patch) cannot be applied.
 I solved this by [forking the orignal repo](https://github.com/brokenpylons/grpc-gateway), appling the patch manually and then replacing the dependecy with my repository.
-Obviously, this is not an ideal solution, there should be a way to apply the patch, however I can't figure it out.
+Obviously, this is not an ideal solution, there should be a way to apply the patch, however, I can't figure it out.
 
 ### ```libedit``` files not picked up
 
