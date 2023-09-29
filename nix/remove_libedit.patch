@@ -1,0 +1,1014 @@
+diff --git a/.gitmodules b/.gitmodules
+index a17a19a1e7f..20a951407ed 100644
+--- a/.gitmodules
++++ b/.gitmodules
+@@ -4,9 +4,6 @@
+ [submodule "c-deps/krb5"]
+ 	path = c-deps/krb5
+ 	url = https://github.com/cockroachdb/krb5.git
+-[submodule "c-deps/libedit"]
+-	path = c-deps/libedit
+-	url = https://github.com/cockroachdb/libedit.git
+ [submodule "c-deps/geos"]
+ 	path = c-deps/geos
+ 	url = https://github.com/cockroachdb/geos.git
+diff --git a/DEPS.bzl b/DEPS.bzl
+index 468292bc6ab..dae337084de 100644
+--- a/DEPS.bzl
++++ b/DEPS.bzl
+@@ -5349,16 +5349,6 @@ def go_deps():
+             "https://storage.googleapis.com/cockroach-godeps/gomod/github.com/knz/catwalk/com_github_knz_catwalk-v0.1.4.zip",
+         ],
+     )
+-    go_repository(
+-        name = "com_github_knz_go_libedit",
+-        build_file_proto_mode = "disable_global",
+-        importpath = "github.com/knz/go-libedit",
+-        sha256 = "de5a038a75f45e5c4d19321d39b85b7007b73eb77f9ec3fcca16798236fb081f",
+-        strip_prefix = "github.com/knz/go-libedit@v1.10.2-0.20230621133438-5f2b2e7387c5",
+-        urls = [
+-            "https://storage.googleapis.com/cockroach-godeps/gomod/github.com/knz/go-libedit/com_github_knz_go_libedit-v1.10.2-0.20230621133438-5f2b2e7387c5.zip",
+-        ],
+-    )
+     go_repository(
+         name = "com_github_knz_lipgloss_convert",
+         build_file_proto_mode = "disable_global",
+diff --git a/Makefile b/Makefile
+index caed5fddfa3..f95b231dfdc 100644
+--- a/Makefile
++++ b/Makefile
+@@ -464,7 +464,6 @@ C_DEPS_DIR := $(abspath c-deps)
+ JEMALLOC_SRC_DIR := $(C_DEPS_DIR)/jemalloc
+ GEOS_SRC_DIR     := $(C_DEPS_DIR)/geos
+ PROJ_SRC_DIR     := $(C_DEPS_DIR)/proj
+-LIBEDIT_SRC_DIR  := $(C_DEPS_DIR)/libedit
+ KRB5_SRC_DIR     := $(C_DEPS_DIR)/krb5
+ 
+ # Derived build variants.
+@@ -484,11 +483,9 @@ endif
+ JEMALLOC_DIR := $(BUILD_DIR)/jemalloc
+ GEOS_DIR     := $(BUILD_DIR)/geos
+ PROJ_DIR     := $(BUILD_DIR)/proj
+-LIBEDIT_DIR  := $(BUILD_DIR)/libedit
+ KRB5_DIR     := $(BUILD_DIR)/krb5
+ 
+ LIBJEMALLOC := $(JEMALLOC_DIR)/lib/libjemalloc.a
+-LIBEDIT     := $(LIBEDIT_DIR)/src/.libs/libedit.a
+ LIBPROJ     := $(PROJ_DIR)/lib/libproj$(if $(target-is-windows),_4_9).a
+ LIBKRB5     := $(KRB5_DIR)/lib/libgssapi_krb5.a
+ 
+@@ -505,7 +502,6 @@ LIBGEOS     := $(DYN_LIB_DIR)/libgeos.$(DYN_EXT)
+ 
+ C_LIBS_COMMON = \
+ 	$(if $(use-stdmalloc),,$(LIBJEMALLOC)) \
+-	$(if $(target-is-windows),,$(LIBEDIT)) \
+ 	$(LIBPROJ)
+ C_LIBS_SHORT = $(C_LIBS_COMMON)
+ C_LIBS_OSS = $(C_LIBS_COMMON)
+@@ -551,13 +547,11 @@ CGO_PKGS := \
+ 	pkg/cli/clisqlshell \
+ 	pkg/server/status \
+ 	pkg/ccl/gssapiccl \
+-	pkg/geo/geoproj \
+-	vendor/github.com/knz/go-libedit/unix
+-vendor/github.com/knz/go-libedit/unix-package := libedit_unix
++	pkg/geo/geoproj
+ CGO_UNSUFFIXED_FLAGS_FILES := $(addprefix ./,$(addsuffix /zcgo_flags.go,$(CGO_PKGS)))
+ CGO_SUFFIXED_FLAGS_FILES   := $(addprefix ./,$(addsuffix /zcgo_flags_$(native-tag).go,$(CGO_PKGS)))
+ BASE_CGO_FLAGS_FILES := $(CGO_UNSUFFIXED_FLAGS_FILES) $(CGO_SUFFIXED_FLAGS_FILES)
+-CGO_FLAGS_FILES := $(BASE_CGO_FLAGS_FILES) vendor/github.com/knz/go-libedit/unix/zcgo_flags_extra.go
++CGO_FLAGS_FILES := $(BASE_CGO_FLAGS_FILES)
+ 
+ $(BASE_CGO_FLAGS_FILES): Makefile build/defs.mk.sig | bin/.submodules-initialized vendor/modules.txt
+ 	@echo "regenerating $@"
+@@ -569,17 +563,7 @@ $(BASE_CGO_FLAGS_FILES): Makefile build/defs.mk.sig | bin/.submodules-initialize
+ 	@echo 'package $(if $($(@D)-package),$($(@D)-package),$(notdir $(@D)))' >> $@
+ 	@echo >> $@
+ 	@echo '// #cgo CPPFLAGS: $(addprefix -I,$(JEMALLOC_DIR)/include $(KRB_CPPFLAGS))' >> $@
+-	@echo '// #cgo LDFLAGS: $(addprefix -L,$(JEMALLOC_DIR)/lib $(LIBEDIT_DIR)/src/.libs $(KRB_DIR) $(PROJ_DIR)/lib)' >> $@
+-	@echo 'import "C"' >> $@
+-
+-vendor/github.com/knz/go-libedit/unix/zcgo_flags_extra.go: Makefile | bin/.submodules-initialized vendor/modules.txt
+-	@echo "regenerating $@"
+-	@echo '// GENERATED FILE DO NOT EDIT' > $@
+-	@echo >> $@
+-	@echo 'package $($(@D)-package)' >> $@
+-	@echo >> $@
+-	@echo '// #cgo CPPFLAGS: -DGO_LIBEDIT_NO_BUILD' >> $@
+-	@echo '// #cgo !windows LDFLAGS: -ledit -lncurses' >> $@
++	@echo '// #cgo LDFLAGS: $(addprefix -L,$(JEMALLOC_DIR)/lib $(KRB_DIR) $(PROJ_DIR)/lib)' >> $@
+ 	@echo 'import "C"' >> $@
+ 
+ # BUILD ARTIFACT CACHING
+@@ -650,18 +634,6 @@ $(PROJ_DIR)/Makefile: $(C_DEPS_DIR)/proj-rebuild | bin/.submodules-initialized
+ 	mkdir -p $(PROJ_DIR)
+ 	cd $(PROJ_DIR) && cmake  $(xcmake-flags) $(PROJ_SRC_DIR) -DCMAKE_BUILD_TYPE=Release -DBUILD_LIBPROJ_SHARED=OFF
+ 
+-$(LIBEDIT_SRC_DIR)/configure.ac: | bin/.submodules-initialized
+-
+-$(LIBEDIT_SRC_DIR)/configure: $(LIBEDIT_SRC_DIR)/configure.ac
+-	cd $(LIBEDIT_SRC_DIR) && autoconf
+-
+-$(LIBEDIT_DIR)/Makefile: $(C_DEPS_DIR)/libedit-rebuild $(LIBEDIT_SRC_DIR)/configure
+-	rm -rf $(LIBEDIT_DIR)
+-	mkdir -p $(LIBEDIT_DIR)
+-	@# NOTE: If you change the configure flags below, bump the version in
+-	@# $(C_DEPS_DIR)/libedit-rebuild. See above for rationale.
+-	cd $(LIBEDIT_DIR) && $(LIBEDIT_SRC_DIR)/configure $(xconfigure-flags) --disable-examples --disable-shared
+-
+ # Most of our C and C++ dependencies use Makefiles that are generated by CMake,
+ # which are rather slow, taking upwards of 500ms to determine that nothing has
+ # changed. The no-op case is the common case, as C and C++ code is modified
+@@ -734,15 +706,11 @@ libgeos_inner: $(GEOS_DIR)/Makefile bin/uptodate .ALWAYS_REBUILD
+ $(LIBPROJ): $(PROJ_DIR)/Makefile bin/uptodate .ALWAYS_REBUILD
+ 	@uptodate $@ $(PROJ_SRC_DIR) || $(MAKE) --no-print-directory -C $(PROJ_DIR) proj
+ 
+-$(LIBEDIT): $(LIBEDIT_DIR)/Makefile bin/uptodate .ALWAYS_REBUILD
+-	@uptodate $@ $(LIBEDIT_SRC_DIR) || $(MAKE) --no-print-directory -C $(LIBEDIT_DIR)/src
+-
+ $(LIBKRB5): $(KRB5_DIR)/Makefile bin/uptodate .ALWAYS_REBUILD
+ 	@uptodate $@ $(KRB5_SRC_DIR)/src || $(MAKE) --no-print-directory -C $(KRB5_DIR)
+ 
+ # Convenient names for maintainers. Not used by other targets in the Makefile.
+ .PHONY:  libjemalloc libgeos libproj libkrb5
+-libedit:     $(LIBEDIT)
+ libjemalloc: $(LIBJEMALLOC)
+ libgeos:     $(LIBGEOS)
+ libproj:     $(LIBPROJ)
+@@ -963,7 +931,7 @@ $(COCKROACHSHORT): TAGS += short
+ $(COCKROACHSHORT): $(C_LIBS_SHORT) | $(C_LIBS_DYNAMIC)
+ 
+ $(COCKROACHSQL): BUILDTARGET = ./pkg/cmd/cockroach-sql
+-$(COCKROACHSQL): $(if $(target-is-windows),,$(LIBEDIT))
++$(COCKROACHSQL):
+ 
+ # For test targets, add a tag (used to enable extra assertions).
+ $(test-targets): TAGS += crdb_test
+diff --git a/build/bazelutil/distdir_files.bzl b/build/bazelutil/distdir_files.bzl
+index 80278ed8372..4d601b0a6a8 100644
+Binary files a/build/bazelutil/distdir_files.bzl and b/build/bazelutil/distdir_files.bzl differ
+diff --git a/build/variables.mk b/build/variables.mk
+index cb35b3e7620..c34e2ef5996 100644
+--- a/build/variables.mk
++++ b/build/variables.mk
+@@ -91,9 +91,6 @@ define VALID_VARS
+   KRB_DIR
+   LC_ALL
+   LDFLAGS
+-  LIBEDIT
+-  LIBEDIT_DIR
+-  LIBEDIT_SRC_DIR
+   LIBGEOS
+   LIBJEMALLOC
+   LIBPROJ
+diff --git a/c-deps/libedit-rebuild b/c-deps/libedit-rebuild
+deleted file mode 100644
+index 6a53a68b9ca..00000000000
+--- a/c-deps/libedit-rebuild
++++ /dev/null
+@@ -1,4 +0,0 @@
+-Bump the version below when changing libedit configure flags. Search for "BUILD
+-ARTIFACT CACHING" in the top-level Makefile for rationale.
+-
+-2
+diff --git a/go.mod b/go.mod
+index 3ed6038e723..b8d1f449c96 100644
+--- a/go.mod
++++ b/go.mod
+@@ -165,7 +165,6 @@ require (
+ 	github.com/klauspost/compress v1.15.15
+ 	github.com/klauspost/pgzip v1.2.5
+ 	github.com/knz/bubbline v0.0.0-20230422210153-e176cdfe1c43
+-	github.com/knz/go-libedit v1.10.2-0.20230621133438-5f2b2e7387c5
+ 	github.com/knz/strtime v0.0.0-20200318182718-be999391ffa9
+ 	github.com/kr/pretty v0.3.0
+ 	github.com/kr/text v0.2.0
+diff --git a/go.sum b/go.sum
+index 5e3cd6b26b6..4bb744ee2de 100644
+--- a/go.sum
++++ b/go.sum
+@@ -1508,8 +1508,6 @@ github.com/knz/bubbline v0.0.0-20230422210153-e176cdfe1c43 h1:uhwfuoL9LDMUGlxcs3
+ github.com/knz/bubbline v0.0.0-20230422210153-e176cdfe1c43/go.mod h1:ucXvyrucVy4jp/4afdKWNW1TVO73GMI72VNINzyT678=
+ github.com/knz/catwalk v0.1.4 h1:GgCxHbPp+nzyZBJcNL/CJd1aba4ACoeuI1lnsshAPkY=
+ github.com/knz/catwalk v0.1.4/go.mod h1:Q+Yj4ny4AXgrOOyWyDGY/HJzmbGH8MFnsUqvCAiUT5s=
+-github.com/knz/go-libedit v1.10.2-0.20230621133438-5f2b2e7387c5 h1:62iTw+D4JtoXL7yp4S5Ruyc82qmbWdnwuuSZ3tmcuSw=
+-github.com/knz/go-libedit v1.10.2-0.20230621133438-5f2b2e7387c5/go.mod h1:dmDChGdWopkB61HsdDN0/fxKAMIYljKTu+AG9uc4qVY=
+ github.com/knz/lipgloss-convert v0.1.0 h1:qUPUt6r8mqvi9DIV3nBPu3kEmFyHrZtXzv0BlPBPLNQ=
+ github.com/knz/lipgloss-convert v0.1.0/go.mod h1:S14GmtoiW/VAHqB7xEzuZOt0/G6GQ2dfjJN0fHpm30Q=
+ github.com/knz/strtime v0.0.0-20200318182718-be999391ffa9 h1:GQE1iatYDRrIidq4Zf/9ZzKWyrTk2sXOYc1JADbkAjQ=
+diff --git a/pkg/acceptance/generated_cli_test.go b/pkg/acceptance/generated_cli_test.go
+new file mode 100644
+index 00000000000..0725b3a0122
+--- /dev/null
++++ b/pkg/acceptance/generated_cli_test.go
+@@ -0,0 +1,453 @@
++// Copyright 2023 The Cockroach Authors.
++//
++// Use of this software is governed by the Business Source License
++// included in the file licenses/BSL.txt.
++//
++// As of the Change Date specified in that file, in accordance with
++// the Business Source License, use of this software will be governed
++// by the Apache License, Version 2.0, included in the file
++// licenses/APL.txt.
++
++// Code generated by generate-acceptance-tests, DO NOT EDIT.
++
++package acceptance
++
++import (
++	"testing"
++
++	"github.com/cockroachdb/cockroach/pkg/util/log"
++)
++
++func TestDockerCLI_test_audit_log(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_audit_log", "../cli/interactive_tests/test_audit_log.tcl")
++}
++
++func TestDockerCLI_test_auto_trace(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_auto_trace", "../cli/interactive_tests/test_auto_trace.tcl")
++}
++
++func TestDockerCLI_test_cert_advisory_validation(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_cert_advisory_validation", "../cli/interactive_tests/test_cert_advisory_validation.tcl")
++}
++
++func TestDockerCLI_test_changefeed(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_changefeed", "../cli/interactive_tests/test_changefeed.tcl")
++}
++
++func TestDockerCLI_test_client_side_checking(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_client_side_checking", "../cli/interactive_tests/test_client_side_checking.tcl")
++}
++
++func TestDockerCLI_test_cluster_name(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_cluster_name", "../cli/interactive_tests/test_cluster_name.tcl")
++}
++
++func TestDockerCLI_test_connect(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_connect", "../cli/interactive_tests/test_connect.tcl")
++}
++
++func TestDockerCLI_test_connect_cmd(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_connect_cmd", "../cli/interactive_tests/test_connect_cmd.tcl")
++}
++
++func TestDockerCLI_test_contextual_help(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_contextual_help", "../cli/interactive_tests/test_contextual_help.tcl")
++}
++
++func TestDockerCLI_test_copy(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_copy", "../cli/interactive_tests/test_copy.tcl")
++}
++
++func TestDockerCLI_test_demo_changefeeds(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_demo_changefeeds", "../cli/interactive_tests/test_demo_changefeeds.tcl")
++}
++
++func TestDockerCLI_test_demo_cli_integration(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_demo_cli_integration", "../cli/interactive_tests/test_demo_cli_integration.tcl")
++}
++
++func TestDockerCLI_test_demo_global(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_demo_global", "../cli/interactive_tests/test_demo_global.tcl")
++}
++
++func TestDockerCLI_test_demo_global_insecure(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_demo_global_insecure", "../cli/interactive_tests/test_demo_global_insecure.tcl")
++}
++
++func TestDockerCLI_test_demo_locality_error(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_demo_locality_error", "../cli/interactive_tests/test_demo_locality_error.tcl")
++}
++
++func TestDockerCLI_test_demo_memory_warning(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_demo_memory_warning", "../cli/interactive_tests/test_demo_memory_warning.tcl")
++}
++
++func TestDockerCLI_test_demo_node_cmds(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_demo_node_cmds", "../cli/interactive_tests/test_demo_node_cmds.tcl")
++}
++
++func TestDockerCLI_test_demo_telemetry(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_demo_telemetry", "../cli/interactive_tests/test_demo_telemetry.tcl")
++}
++
++func TestDockerCLI_test_demo_workload(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_demo_workload", "../cli/interactive_tests/test_demo_workload.tcl")
++}
++
++func TestDockerCLI_test_disable_replication(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_disable_replication", "../cli/interactive_tests/test_disable_replication.tcl")
++}
++
++func TestDockerCLI_test_dump_sig(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_dump_sig", "../cli/interactive_tests/test_dump_sig.tcl")
++}
++
++func TestDockerCLI_test_encryption(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_encryption", "../cli/interactive_tests/test_encryption.tcl")
++}
++
++func TestDockerCLI_test_error_handling(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_error_handling", "../cli/interactive_tests/test_error_handling.tcl")
++}
++
++func TestDockerCLI_test_error_hints(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_error_hints", "../cli/interactive_tests/test_error_hints.tcl")
++}
++
++func TestDockerCLI_test_example_data(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_example_data", "../cli/interactive_tests/test_example_data.tcl")
++}
++
++func TestDockerCLI_test_exec_log(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_exec_log", "../cli/interactive_tests/test_exec_log.tcl")
++}
++
++func TestDockerCLI_test_explain_analyze(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_explain_analyze", "../cli/interactive_tests/test_explain_analyze.tcl")
++}
++
++func TestDockerCLI_test_explain_analyze_debug(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_explain_analyze_debug", "../cli/interactive_tests/test_explain_analyze_debug.tcl")
++}
++
++func TestDockerCLI_test_extern_dir(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_extern_dir", "../cli/interactive_tests/test_extern_dir.tcl")
++}
++
++func TestDockerCLI_test_flags(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_flags", "../cli/interactive_tests/test_flags.tcl")
++}
++
++func TestDockerCLI_test_high_verbosity(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_high_verbosity", "../cli/interactive_tests/test_high_verbosity.tcl")
++}
++
++func TestDockerCLI_test_history(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_history", "../cli/interactive_tests/test_history.tcl")
++}
++
++func TestDockerCLI_test_init_command(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_init_command", "../cli/interactive_tests/test_init_command.tcl")
++}
++
++func TestDockerCLI_test_interrupt(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_interrupt", "../cli/interactive_tests/test_interrupt.tcl")
++}
++
++func TestDockerCLI_test_last_statement(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_last_statement", "../cli/interactive_tests/test_last_statement.tcl")
++}
++
++func TestDockerCLI_test_local_cmds(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_local_cmds", "../cli/interactive_tests/test_local_cmds.tcl")
++}
++
++func TestDockerCLI_test_log_config_msg(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_log_config_msg", "../cli/interactive_tests/test_log_config_msg.tcl")
++}
++
++func TestDockerCLI_test_log_flags(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_log_flags", "../cli/interactive_tests/test_log_flags.tcl")
++}
++
++func TestDockerCLI_test_multiline_statements(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_multiline_statements", "../cli/interactive_tests/test_multiline_statements.tcl")
++}
++
++func TestDockerCLI_test_multiple_nodes(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_multiple_nodes", "../cli/interactive_tests/test_multiple_nodes.tcl")
++}
++
++func TestDockerCLI_test_notice(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_notice", "../cli/interactive_tests/test_notice.tcl")
++}
++
++func TestDockerCLI_test_password(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_password", "../cli/interactive_tests/test_password.tcl")
++}
++
++func TestDockerCLI_test_pretty(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_pretty", "../cli/interactive_tests/test_pretty.tcl")
++}
++
++func TestDockerCLI_test_read_only(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_read_only", "../cli/interactive_tests/test_read_only.tcl")
++}
++
++func TestDockerCLI_test_reconnect(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_reconnect", "../cli/interactive_tests/test_reconnect.tcl")
++}
++
++func TestDockerCLI_test_secure(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_secure", "../cli/interactive_tests/test_secure.tcl")
++}
++
++func TestDockerCLI_test_secure_ocsp(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_secure_ocsp", "../cli/interactive_tests/test_secure_ocsp.tcl")
++}
++
++func TestDockerCLI_test_server_restart(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_server_restart", "../cli/interactive_tests/test_server_restart.tcl")
++}
++
++func TestDockerCLI_test_server_sig(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_server_sig", "../cli/interactive_tests/test_server_sig.tcl")
++}
++
++func TestDockerCLI_test_socket_name(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_socket_name", "../cli/interactive_tests/test_socket_name.tcl")
++}
++
++func TestDockerCLI_test_sql_demo_node_cmds(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_sql_demo_node_cmds", "../cli/interactive_tests/test_sql_demo_node_cmds.tcl")
++}
++
++func TestDockerCLI_test_sql_safe_updates(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_sql_safe_updates", "../cli/interactive_tests/test_sql_safe_updates.tcl")
++}
++
++func TestDockerCLI_test_sql_version_reporting(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_sql_version_reporting", "../cli/interactive_tests/test_sql_version_reporting.tcl")
++}
++
++func TestDockerCLI_test_style_enabled(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_style_enabled", "../cli/interactive_tests/test_style_enabled.tcl")
++}
++
++func TestDockerCLI_test_temp_dir(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_temp_dir", "../cli/interactive_tests/test_temp_dir.tcl")
++}
++
++func TestDockerCLI_test_timing(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_timing", "../cli/interactive_tests/test_timing.tcl")
++}
++
++func TestDockerCLI_test_txn_prompt(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_txn_prompt", "../cli/interactive_tests/test_txn_prompt.tcl")
++}
++
++func TestDockerCLI_test_url_db_override(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_url_db_override", "../cli/interactive_tests/test_url_db_override.tcl")
++}
++
++func TestDockerCLI_test_url_login(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_url_login", "../cli/interactive_tests/test_url_login.tcl")
++}
++
++func TestDockerCLI_test_workload(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_workload", "../cli/interactive_tests/test_workload.tcl")
++}
++
++func TestDockerCLI_test_zero_directory(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_zero_directory", "../cli/interactive_tests/test_zero_directory.tcl")
++}
++
++func TestDockerCLI_test_zip_filter(t *testing.T) {
++	s := log.Scope(t)
++	defer s.Close(t)
++
++	runTestDockerCLI(t, "test_zip_filter", "../cli/interactive_tests/test_zip_filter.tcl")
++}
+diff --git a/pkg/cli/clisqlshell/BUILD.bazel b/pkg/cli/clisqlshell/BUILD.bazel
+index 9dc048d6f46..d4f049f02e9 100644
+--- a/pkg/cli/clisqlshell/BUILD.bazel
++++ b/pkg/cli/clisqlshell/BUILD.bazel
+@@ -12,7 +12,6 @@ go_library(
+         "editor_bimodal.go",
+         "editor_bubbline.go",
+         "editor_bufio.go",
+-        "editor_editline.go",
+         "parser.go",
+         "sql.go",
+         "statement_diag.go",
+@@ -45,7 +44,6 @@ go_library(
+         "@com_github_knz_bubbline//computil",
+         "@com_github_knz_bubbline//editline",
+         "@com_github_knz_bubbline//history",
+-        "@com_github_knz_go_libedit//:go-libedit",
+     ],
+ )
+ 
+diff --git a/pkg/cli/clisqlshell/editor.go b/pkg/cli/clisqlshell/editor.go
+index f198e11db35..d4cf645091b 100644
+--- a/pkg/cli/clisqlshell/editor.go
++++ b/pkg/cli/clisqlshell/editor.go
+@@ -10,11 +10,7 @@
+ 
+ package clisqlshell
+ 
+-import (
+-	"os"
+-
+-	"github.com/cockroachdb/cockroach/pkg/util/envutil"
+-)
++import "os"
+ 
+ // editor is the interface between the shell and a line editor.
+ type editor interface {
+@@ -44,13 +40,8 @@ func getEditor(useEditor bool, displayPrompt bool) editor {
+ 	if !useEditor {
+ 		return &bufioReader{displayPrompt: displayPrompt}
+ 	}
+-	if useLibEdit {
+-		return &editlineReader{}
+-	}
+ 	return &bimodalEditor{
+ 		main: &bubblineReader{},
+ 		copy: &bufioReader{displayPrompt: displayPrompt},
+ 	}
+ }
+-
+-var useLibEdit = envutil.EnvOrDefaultBool("COCKROACH_SQL_FORCE_LIBEDIT", false)
+diff --git a/pkg/cli/clisqlshell/editor_editline.go b/pkg/cli/clisqlshell/editor_editline.go
+deleted file mode 100644
+index 961e58a0a89..00000000000
+--- a/pkg/cli/clisqlshell/editor_editline.go
++++ /dev/null
+@@ -1,163 +0,0 @@
+-// Copyright 2022 The Cockroach Authors.
+-//
+-// Use of this software is governed by the Business Source License
+-// included in the file licenses/BSL.txt.
+-//
+-// As of the Change Date specified in that file, in accordance with
+-// the Business Source License, use of this software will be governed
+-// by the Apache License, Version 2.0, included in the file
+-// licenses/APL.txt.
+-
+-package clisqlshell
+-
+-import (
+-	"fmt"
+-	"os"
+-	"strings"
+-
+-	"github.com/cockroachdb/cockroach/pkg/cli/clierror"
+-	"github.com/cockroachdb/errors"
+-	readline "github.com/knz/go-libedit"
+-)
+-
+-// editlineReader implements the editor interface.
+-type editlineReader struct {
+-	wout   *os.File
+-	sql    sqlShell
+-	prompt string
+-	ins    readline.EditLine
+-}
+-
+-var _ editor = (*editlineReader)(nil)
+-
+-func (b *editlineReader) init(
+-	win, wout, werr *os.File, sqlS sqlShell, maxHistEntries int, histFile string,
+-) (cleanupFn func(), err error) {
+-	cleanupFn = func() {}
+-
+-	b.ins, err = readline.InitFiles("cockroach",
+-		true /* wideChars */, win, wout, werr)
+-	if errors.Is(err, readline.ErrWidecharNotSupported) {
+-		fmt.Fprintln(werr, "warning: wide character support disabled")
+-		b.ins, err = readline.InitFiles("cockroach",
+-			false, win, wout, werr)
+-	}
+-	if err != nil {
+-		return cleanupFn, err
+-	}
+-	cleanupFn = func() { b.ins.Close() }
+-	b.wout = b.ins.Stdout()
+-	b.sql = sqlS
+-	b.ins.SetCompleter(b)
+-
+-	// If the user has used bind -v or bind -l in their ~/.editrc,
+-	// this will reset the standard bindings. However we really
+-	// want in this shell that Ctrl+C, tab, Ctrl+Z and Ctrl+R
+-	// always have the same meaning.  So reload these bindings
+-	// explicitly no matter what ~/.editrc may have changed.
+-	b.ins.RebindControlKeys()
+-
+-	if err := b.ins.UseHistory(maxHistEntries, true /*dedup*/); err != nil {
+-		fmt.Fprintf(werr, "warning: cannot enable history: %v\n ", err)
+-	} else if histFile != "" {
+-		err = b.ins.LoadHistory(histFile)
+-		if err != nil {
+-			fmt.Fprintf(werr, "warning: cannot load the command-line history (file corrupted?): %v\n", err)
+-			fmt.Fprintf(werr, "note: the history file will be cleared upon first entry\n")
+-		}
+-		// SetAutoSaveHistory() does two things:
+-		// - it preserves the name of the history file, for use
+-		//   by the final SaveHistory() call.
+-		// - it decides whether to save the history to file upon
+-		//   every new command.
+-		// We disable the latter, since a history file can grow somewhat
+-		// large and we don't want the excess I/O latency to be interleaved
+-		// in-between every command.
+-		b.ins.SetAutoSaveHistory(histFile, false)
+-		prevCleanup := cleanupFn
+-		cleanupFn = func() {
+-			if err := b.ins.SaveHistory(); err != nil {
+-				fmt.Fprintf(werr, "warning: cannot save command-line history: %v\n", err)
+-			}
+-			prevCleanup()
+-		}
+-	}
+-
+-	return cleanupFn, nil
+-}
+-
+-func (b *editlineReader) errInterrupted() error {
+-	return readline.ErrInterrupted
+-}
+-
+-func (b *editlineReader) getOutputStream() *os.File {
+-	return b.wout
+-}
+-
+-func (b *editlineReader) addHistory(line string) error {
+-	return b.ins.AddHistory(line)
+-}
+-
+-func (b *editlineReader) saveHistory() error {
+-	return b.ins.SaveHistory()
+-}
+-
+-func (b *editlineReader) canPrompt() bool {
+-	return true
+-}
+-
+-func (b *editlineReader) setPrompt(prompt string) {
+-	b.prompt = prompt
+-	b.ins.SetLeftPrompt(prompt)
+-}
+-
+-func (b *editlineReader) multilineEdit() bool {
+-	return false
+-}
+-
+-func (b *editlineReader) GetCompletions(word string) []string {
+-	if b.sql.inCopy() {
+-		return []string{word + "\t"}
+-	}
+-	sql, offset := b.ins.GetLineInfo()
+-	if !strings.HasSuffix(sql, "??") {
+-		rows, err := b.sql.runShowCompletions(sql, offset)
+-		if err != nil {
+-			clierror.OutputError(b.wout, err, true /*showSeverity*/, false /*verbose*/)
+-		}
+-
+-		var completions []string
+-		for _, row := range rows {
+-			completions = append(completions, row[0])
+-		}
+-
+-		return completions
+-	}
+-
+-	helpText, err := b.sql.serverSideParse(sql)
+-	if helpText != "" {
+-		// We have a completion suggestion. Use that.
+-		fmt.Fprintf(b.wout, "\nSuggestion:\n%s\n", helpText)
+-	} else if err != nil {
+-		// Some other error. Display it.
+-		fmt.Fprintln(b.wout)
+-		clierror.OutputError(b.wout, err, true /*showSeverity*/, false /*verbose*/)
+-	}
+-
+-	// After a suggestion or error, redisplay the prompt and current entry.
+-	fmt.Fprint(b.wout, b.prompt, sql)
+-	return nil
+-}
+-
+-func (b *editlineReader) getLine() (string, error) {
+-	l, err := b.ins.GetLine()
+-	if len(l) > 0 && l[len(l)-1] == '\n' {
+-		// Strip the final newline.
+-		l = l[:len(l)-1]
+-	} else {
+-		// There was no newline at the end of the input
+-		// (e.g. Ctrl+C was entered). Force one.
+-		fmt.Fprintln(b.wout)
+-	}
+-	return l, err
+-}
+diff --git a/pkg/cli/interactive_tests/test_multiline_statements_libedit.tcl b/pkg/cli/interactive_tests/test_multiline_statements_libedit.tcl
+deleted file mode 100644
+index 1ccaf529174..00000000000
+--- a/pkg/cli/interactive_tests/test_multiline_statements_libedit.tcl
++++ /dev/null
+@@ -1,131 +0,0 @@
+-#! /usr/bin/env expect -f
+-
+-source [file join [file dirname $argv0] common.tcl]
+-
+-start_server $argv
+-
+-# force use of libedit.
+-# NB: these tests will disappear when libedit goes away.
+-set env(COCKROACH_SQL_FORCE_LIBEDIT) "true"
+-
+-spawn $argv sql
+-eexpect "defaultdb>"
+-
+-start_test "Test that a multi-line entry can be recalled escaped."
+-send "select 'foo\r"
+-eexpect " ->"
+-send "bar';\r"
+-eexpect "1 row"
+-eexpect "defaultdb>"
+-
+-# Send up-arrow.
+-send "\033\[A"
+-eexpect "select 'foo"
+-eexpect "bar';"
+-send "\r"
+-eexpect foo
+-eexpect bar
+-eexpect "defaultdb>"
+-
+-send "select 1,\r"
+-eexpect " ->"
+-send "2, 3\r"
+-eexpect " ->"
+-end_test
+-
+-start_test "Test that \p does what it says."
+-send "\\p\r"
+-eexpect "select 1,"
+-eexpect "2, 3"
+-eexpect " ->"
+-end_test
+-
+-start_test "Test finishing the multi-line statement."
+-send ";\r"
+-eexpect "1 row"
+-eexpect "defaultdb>"
+-
+-# Send up-arrow.
+-send "\033\[A"
+-eexpect "select 1,"
+-eexpect "2, 3"
+-eexpect ";"
+-end_test
+-
+-start_test "Test that \r does what it says."
+-# backspace to erase the semicolon
+-send "\010"
+-# newline to get a prompt
+-send "\r"
+-eexpect " ->"
+-# Now send \r followed by a carriage return.
+-send "\\r\r"
+-eexpect "defaultdb>"
+-end_test
+-
+-start_test "Test that Ctrl+C after the first line merely cancels the statement and presents the prompt."
+-send "\r"
+-eexpect "defaultdb>"
+-send "select\r"
+-eexpect " ->"
+-interrupt
+-eexpect "defaultdb>"
+-end_test
+-
+-start_test "Test that \p does what it says."
+-send "select\r"
+-eexpect " ->"
+-send "\\p\r"
+-eexpect "select\r\n*->"
+-interrupt
+-eexpect "defaultdb>"
+-end_test
+-
+-start_test "Test that a dangling table creation can be committed, and that other non-DDL, non-DML statements can be issued in the same txn. (#15283)"
+-send "create database if not exists t;"
+-send "drop table if exists t.blih;"
+-send "create table if not exists t.kv(k int primary key, v int);\r"
+-eexpect "CREATE TABLE"
+-eexpect "defaultdb>"
+-send "begin; create table t.blih(x INT REFERENCES t.kv(k));\r\r"
+-eexpect "CREATE TABLE"
+-eexpect "defaultdb"
+-eexpect OPEN
+-
+-send "show all cluster settings;\r"
+-eexpect "rows"
+-eexpect "defaultdb"
+-eexpect OPEN
+-
+-send "commit;\r"
+-eexpect COMMIT
+-eexpect "defaultdb>"
+-end_test
+-
+-send "quit\r"
+-eexpect eof
+-
+-# we force TERM to xterm, otherwise we can't
+-# test bracketed paste below.
+-set env(TERM) xterm
+-
+-spawn $argv sql
+-eexpect "defaultdb>"
+-
+-start_test "Test that a multi-line bracketed paste is handled properly."
+-send "\033\[200~"
+-send "\\set display_format csv\r\n"
+-send "values (1,'a'), (2,'b'), (3,'c');\r\n"
+-send "\033\[201~\r\n"
+-eexpect "1,a"
+-eexpect "2,b"
+-eexpect "3,c"
+-eexpect "defaultdb>"
+-end_test
+-
+-
+-
+-send_eof
+-eexpect eof
+-
+-stop_server $argv
