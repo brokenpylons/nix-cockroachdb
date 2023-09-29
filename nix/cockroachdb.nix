@@ -12,7 +12,7 @@ buildBazelPackage {
     owner = "cockroachdb";
     repo = "cockroach";
     inherit rev;
-    hash = "sha256-TeAZ8UxdvAb36PWBWFqNEoSWL8BhA9e76ccYdNPUL2A=";
+    hash = "sha256-AeaYBe9+Og7U16Akm2OJGhWA5hBM3D7Ld/uU7QZd7Nw=";
     fetchSubmodules = true;
   };
 
@@ -39,7 +39,7 @@ buildBazelPackage {
   bazelTargets = [ "//pkg/cmd/cockroach-short:cockroach-short" ];
 
   fetchAttrs = {
-    sha256 = "sha256-6HVp4t3inN0LND2Jjg9VyyESmQdK/xcDeDD+xWjA97w="; #lib.fakeHash;
+    sha256 = "sha256-UeudshIRe0resfFID297staCOwSQdzgm/sMSxd/5Av8="; #lib.fakeHash;
 
     preBuild = ''
       export USER=nixbld
