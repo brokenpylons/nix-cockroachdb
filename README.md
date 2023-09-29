@@ -1,6 +1,6 @@
 # Nix derivation for CockroachDB
 
-An attempt to build CockroachDB using bazel.
+An attempt to build CockroachDB using ```bazel```.
 The derivation is based on ```buildBazelPackage```. 
 Currently the ```//pkg/cmd/cockroach-short:cockroach-short``` target is used, which is not the full build, however I can't even get that to work.
 
