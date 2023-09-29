@@ -37,10 +37,10 @@ buildBazelPackage {
   ];
 
   removeRulesCC = false;
-  bazelTargets = [ "//pkg/cmd/cockroach-short:cockroach-short" ];
+  bazelTargets = [ "//pkg/cmd/cockroach-oss" ];
 
   fetchAttrs = {
-    sha256 = "sha256-zlJ7/1/qV3IVsiQkuD2+vvdI9Y9zyJ5ighGnFLoSQqo="; #lib.fakeHash;
+    sha256 = "sha256-XtIyCijwLlndQA0+BEd4dSq+bExlIX0k4r0ZW2A8bGo="; # lib.fakeHash;
 
     preBuild = ''
       export USER=nixbld
@@ -51,6 +51,7 @@ buildBazelPackage {
 
   buildAttrs = {
     preBuild = ''
+      patchShebangs $bazelOut/external
       export USER=nixbld
       rm -f .bazelversion
       rm /build/source/tools/bazel
