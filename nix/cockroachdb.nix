@@ -50,7 +50,7 @@ buildBazelPackage {
   ];
 
   fetchAttrs = {
-    sha256 = "sha256-V8BtTkuHzQoZfqmL5zPy/rQRwYFb+t3/QY4wjdc8xbc="; # lib.fakeHash;
+    sha256 = "sha256-9to70fKo6AXp2CbgWQZlT2A7AcIHoeJZY6TgemxA/zE="; # lib.fakeHash;
 
     preBuild = ''
       export USER=nixbld
