@@ -40,26 +40,31 @@ buildBazelPackage {
   bazelTargets = [ "//pkg/cmd/cockroach-oss" ];
 
   fetchAttrs = {
-    sha256 = "sha256-XtIyCijwLlndQA0+BEd4dSq+bExlIX0k4r0ZW2A8bGo="; # lib.fakeHash;
+    sha256 = "sha256-V8BtTkuHzQoZfqmL5zPy/rQRwYFb+t3/QY4wjdc8xbc="; # lib.fakeHash;
 
     preBuild = ''
       export USER=nixbld
       rm -f .bazelversion
       rm /build/source/tools/bazel
-      '';
+    '';
+
+     preInstall = ''
+       rm -rf $bazelOut/external/bazel_gazelle_go_repository_cache/gocache
+     '';
   };
 
   buildAttrs = {
     preBuild = ''
-      patchShebangs $bazelOut/external
+      #patchShebangs $bazelOut/external
       export USER=nixbld
       rm -f .bazelversion
       rm /build/source/tools/bazel
-      ls c-deps/libedit
-      '';
+      #ls c-deps/libedit
+      sed -i -e 's:#!/usr/bin/env bash:#!${bash}/bin/bash:" $bazelOut/external/aspect_rules_js/npm/private/lifecycle/lifecycle-hooks.js
+    '';
 
-     installPhase = ''
+    installPhase = ''
       mkdir -p "$out/bin"
-      '';
+  '';
   };
 }
