@@ -1,0 +1,64 @@
+diff --git a/WORKSPACE b/WORKSPACE
+index 1a9f94bd..3e59c343 100644
+--- a/WORKSPACE
++++ b/WORKSPACE
+@@ -546,7 +546,8 @@ register_toolchains(
+     "//build/toolchains:cross_arm64_windows_toolchain",
+     "//build/toolchains:cross_arm64_macos_toolchain",
+     "//build/toolchains:cross_arm64_macos_arm_toolchain",
+-    "//build/toolchains:node_freebsd_toolchain",
++    "//build/toolchains:node_linux_nix_toolchain",
++    "//build/toolchains:node_darwin_nix_toolchain",
+     "@copy_directory_toolchains//:darwin_amd64_toolchain",
+     "@copy_directory_toolchains//:darwin_arm64_toolchain",
+     "@copy_directory_toolchains//:freebsd_amd64_toolchain",
+@@ -559,12 +560,6 @@ register_toolchains(
+     "@copy_to_directory_toolchains//:linux_amd64_toolchain",
+     "@copy_to_directory_toolchains//:linux_arm64_toolchain",
+     "@copy_to_directory_toolchains//:windows_amd64_toolchain",
+-    "@nodejs_toolchains//:darwin_amd64_toolchain",
+-    "@nodejs_toolchains//:darwin_arm64_toolchain",
+-    # NB: The freebsd node toolchain is above as //build/toolchains:node_freebsd_toolchain
+-    "@nodejs_toolchains//:linux_amd64_toolchain",
+-    "@nodejs_toolchains//:linux_arm64_toolchain",
+-    "@nodejs_toolchains//:windows_amd64_toolchain",
+ )
+ 
+ http_archive(
+diff --git a/build/toolchains/BUILD.bazel b/build/toolchains/BUILD.bazel
+index d96d24c4..825c6baf 100644
+--- a/build/toolchains/BUILD.bazel
++++ b/build/toolchains/BUILD.bazel
+@@ -261,17 +261,27 @@ toolchain(
+ )
+ 
+ toolchain(
+-    name = "node_freebsd_toolchain",
++    name = "node_linux_nix_toolchain",
+     exec_compatible_with = [
+-        "@platforms//os:freebsd",
++        "@platforms//os:linux",
++    ],
++    toolchain = ":node_nix_local_toolchain",
++    toolchain_type = "@rules_nodejs//nodejs:toolchain_type",
++)
++
++toolchain(
++    name = "node_darwin_nix_toolchain",
++    exec_compatible_with = [
++        "@platforms//os:osx",
+     ],
+-    toolchain = ":node_freebsd_local_toolchain",
++    toolchain = ":node_nix_local_toolchain",
+     toolchain_type = "@rules_nodejs//nodejs:toolchain_type",
+ )
+ 
+ node_toolchain(
+-    name = "node_freebsd_local_toolchain",
+-    target_tool_path = "/usr/local/bin/node",
++    name = "node_nix_local_toolchain",
++    target_tool_path = "@nodejs@/bin/node",
++    npm_path = "@nodejs@/bin/npm",
+ )
+ 
+ # There are aliases for each of these flags defined in .bazelrc; for example,
