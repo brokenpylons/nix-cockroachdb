@@ -2,19 +2,6 @@
 
 let
   rev = "6bd6e0c65a2eba531e7a8412d63988abb5b50120";
-
-  lifecyclePatch = writeText "lifecycle.patch" ''
-    --- lifecycle-hooks.js	2023-10-02 13:41:52.858078976 +0200
-    +++ lifecycle-hooks-fix.js	2023-10-02 13:43:26.452718761 +0200
-    @@ -163,6 +163,7 @@
-             stdio: 'inherit',
-             rootModulesDir: nodeModulesPath,
-             unsafePerm: true, // Don't run under a specific user/group
-    +        scriptShell: "${bash}",
-         }
-
-         const rulesJsJson = JSON.parse(
-   '';
 in
 buildBazelPackage {
   pname = "cockroachdb";
@@ -82,10 +69,7 @@ buildBazelPackage {
       export USER=nixbld
       rm -f .bazelversion
       rm /build/source/tools/bazel
-      #ls c-deps/libedit
       #sed -i -e 's:#!/usr/bin/env bash:#!/${bash}/bin/bash:' $bazelOut/external/aspect_rules_js/npm/private/lifecycle/lifecycle-hooks.js
-      #patch $bazelOut/external/aspect_rules_js/npm/private/lifecycle/lifecycle-hooks.js < ${lifecyclePatch}
-      #cat $bazelOut/external/aspect_rules_js/npm/private/lifecycle/lifecycle-hooks.js
 
       chmod +x $bazelOut/external/aspect_rules_js/js/private/js_binary.sh.tpl
       patchShebangs $bazelOut/external/aspect_rules_js/
