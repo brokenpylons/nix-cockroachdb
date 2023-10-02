@@ -19,6 +19,12 @@ This is not worth solving, since ```libedit``` is going to be removed in the nex
 
 By some miracle libedit can be removed cleanly by cherry picking [commit](https://github.com/cockroachdb/cockroach/pull/105282/commits/1d39c48e32bb5847fcca363b8518b6db87485bf7).
 
+### The hash of the ```deps``` derivation keeps chaging
+
+There is probably some file that contains a timestamp included in it.
+
+There are time stamps in ```/external/bazel_gazelle_go_repository_cache/gocache```, removed.
+
 ## Hacks
 
 ### ```grpc_gateway``` patch cannot be applied
@@ -41,9 +47,7 @@ error: builder for '/nix/store/9wnyqx3amb14ybh3d9grrcn6w95dy3yg-cockroachdb-23.1
 ```
 Possibly solved by doing an OSS build, which doesn't include CCL pacakges, one of which includes ```opentelemetry```.
 
-### The hash of the ```deps``` derivation keeps chaging
 
-There is probably some file that contains a timestamp included in it.
 
 ### ```lifecycle-hooks``` error
 ```console
